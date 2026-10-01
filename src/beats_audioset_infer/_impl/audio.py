@@ -8,7 +8,8 @@ from pathlib import Path
 
 import numpy as np
 import torch
-import torchaudio
+
+from .resample import resample
 
 
 def normalize(audio, sample_rate, device):
@@ -56,7 +57,7 @@ def normalize(audio, sample_rate, device):
         "analysis_channels": 1,
     }
     if sample_rate != 16000:
-        x = torchaudio.functional.resample(x, sample_rate, 16000)
+        x = resample(x, sample_rate, 16000)
     x = x.mean(0, keepdim=True)
     if x.shape[1] < 2800:
         raise ValueError(

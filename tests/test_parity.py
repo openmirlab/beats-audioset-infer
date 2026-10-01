@@ -7,10 +7,10 @@ import numpy as np
 import pytest
 import soundfile as sf
 import torch
-import torchaudio
 from parity_support import baseline_root
 
 from beats_audioset_infer._impl.model import BEATs, BEATsConfig
+from beats_audioset_infer._impl.resample import resample
 
 
 @pytest.fixture(scope="module")
@@ -33,7 +33,7 @@ def test_native_parity(model, name):
     data, sr = sf.read(f / (name + ".wav"), dtype="float32", always_2d=True)
     x = torch.from_numpy(data.T).to(device)
     if sr != 16000:
-        x = torchaudio.functional.resample(x, sr, 16000)
+        x = resample(x, sr, 16000)
     x = x.mean(0, keepdim=True)
     gold_dir, environment = baseline_root(f, device)
     gold = np.load(gold_dir / (name + "_" + device + ".npz"))
