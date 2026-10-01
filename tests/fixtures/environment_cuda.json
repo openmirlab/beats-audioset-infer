@@ -560,5 +560,11 @@
     "524": "/m/05rj2",
     "525": "/m/032n05",
     "526": "/m/07ppn3j"
+  },
+  "hardware": {
+    "device": "cuda",
+    "gpu": "NVIDIA GeForce RTX 4090",
+    "matmul_tf32": false,
+    "cudnn_tf32": true
   }
 }

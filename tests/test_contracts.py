@@ -155,3 +155,59 @@ def test_explicit_cuda_not_substituted(monkeypatch):
     with pytest.raises(RuntimeError):
         _device("cuda:0")
     assert str(_device("auto")) == "cpu"
+
+
+def test_unknown_hardware_requires_reference(monkeypatch):
+    from pathlib import Path
+
+    import parity_support
+
+    monkeypatch.setattr(
+        parity_support, "fingerprint", lambda device: {"device": "different_cpu"}
+    )
+    with pytest.raises(AssertionError, match="CPU dispatch differs"):
+        parity_support.baseline_root(Path(__file__).parent / "fixtures", "cpu")
+
+
+def test_unverified_alternate_baseline_rejected(tmp_path, monkeypatch):
+    import json
+
+    import parity_support
+
+    (tmp_path / "environment_cpu.json").write_text(
+        json.dumps({"hardware": parity_support.fingerprint("cpu")})
+    )
+    monkeypatch.setenv("BEATS_TEST_BASELINE", str(tmp_path))
+    with pytest.raises(AssertionError, match="same-host A/B provenance"):
+        parity_support.baseline_root(tmp_path / "committed", "cpu")
+
+
+def test_cli_rejects_colliding_artifacts_before_load(tmp_path, monkeypatch, capsys):
+    import sys
+
+    from beats_audioset_infer.cli import main
+
+    artifact = tmp_path / "existing.npz"
+    artifact.write_bytes(b"original")
+
+    def forbidden_load(self):
+        raise AssertionError("Colliding outputs must fail before load")
+
+    monkeypatch.setattr(BEATsAudioSetSession, "load", forbidden_load)
+    monkeypatch.setattr(
+        sys,
+        "argv",
+        [
+            "beats-audioset-infer",
+            "unused.wav",
+            "--output",
+            str(artifact),
+            "--embeddings-output",
+            str(tmp_path / "." / "existing.npz"),
+        ],
+    )
+    with pytest.raises(SystemExit) as exc:
+        main()
+    assert exc.value.code == 2
+    assert artifact.read_bytes() == b"original"
+    assert "must be different paths" in capsys.readouterr().err

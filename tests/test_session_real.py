@@ -12,6 +12,7 @@ from pathlib import Path
 import numpy as np
 import pytest
 import soundfile as sf
+from parity_support import baseline_root
 
 from beats_audioset_infer import BEATsAudioSetSession
 
@@ -35,10 +36,10 @@ def test_facade_parity(session, name):
     f = Path(__file__).parent / "fixtures"
     r = session.infer(f / (name + ".wav"))
     device = os.environ.get("BEATS_TEST_DEVICE", "cpu")
-    gold = np.load(f / (name + "_" + device + ".npz"))
+    gold_dir, environment = baseline_root(f, device)
+    gold = np.load(gold_dir / (name + "_" + device + ".npz"))
     import torch
 
-    environment = json.loads((f / ("environment_" + device + ".json")).read_text())
     compare = (
         np.testing.assert_array_equal
         if torch.__version__ == environment["torch"]
@@ -60,11 +61,14 @@ def test_inputs_reuse_release_reload(session, monkeypatch):
     f = Path(__file__).parent / "fixtures" / "tones.wav"
     data, sr = sf.read(f, dtype="float32", always_2d=True)
     first = session.infer(f)
+    expected_hash = first.checkpoint["files"]["model.pt"]["sha256"]
+    first.checkpoint["files"]["model.pt"]["sha256"] = "0" * 64
     model = session._model
     reference = weakref.ref(model)
     session.load()
     assert session._model is model
     array = session.infer(data.T, sample_rate=sr)
+    assert array.checkpoint["files"]["model.pt"]["sha256"] == expected_hash
     import torch
 
     tensor = session.infer(torch.from_numpy(data.T.copy()), sample_rate=sr)

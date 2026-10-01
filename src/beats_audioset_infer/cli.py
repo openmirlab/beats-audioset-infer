@@ -30,6 +30,12 @@ def main():
         help="Write complete patch/clip embeddings as NPZ instead of inline JSON",
     )
     a = p.parse_args()
+    if (
+        a.output
+        and a.embeddings_output
+        and Path(a.output).resolve() == Path(a.embeddings_output).resolve()
+    ):
+        p.error("--output and --embeddings-output must be different paths")
     from .session import BEATsAudioSetSession
 
     try:

@@ -13,6 +13,7 @@ import numpy as np
 import soundfile as sf
 import torch
 import torchaudio
+from parity_support import fingerprint
 
 p = argparse.ArgumentParser()
 p.add_argument("--upstream", required=True)
@@ -57,6 +58,7 @@ for path in sorted(f.glob("*.wav")):
 (f / ("environment_" + a.device + ".json")).write_text(
     json.dumps(
         {
+            "hardware": fingerprint(a.device),
             "torch": torch.__version__,
             "torchaudio": torchaudio.__version__,
             "numpy": np.__version__,

@@ -560,5 +560,11 @@
     "524": "/m/05rj2",
     "525": "/m/032n05",
     "526": "/m/07ppn3j"
+  },
+  "hardware": {
+    "device": "cpu",
+    "architecture": "x86_64",
+    "cpu": "13th Gen Intel(R) Core(TM) i5-13600K",
+    "dispatch": "AVX2"
   }
 }
