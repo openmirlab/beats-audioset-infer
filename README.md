@@ -36,7 +36,7 @@ Copied from the upstream README:
 ## Features
 
 - One encoder pass returns all 527 native AudioSet scores and 768-dimensional contextual patch-token embeddings.
-- NumPy CPU arrays remain usable after model release; optional derived mean-pooled clip embedding.
+- NumPy CPU arrays remain usable after model release; additional derived mean-pooled clip embedding.
 - Files, NumPy arrays and Torch tensors share one input normalizer.
 - CPU and CUDA devices, explicit reusable lifecycle, pinned downloads, SHA256 verification and offline cache.
 - Complete JSON results or NPZ embedding artifacts through the `beats-audioset-infer` CLI.
@@ -115,7 +115,7 @@ beats-audioset-infer audio.wav --device cpu --output result.json
 beats-audioset-infer audio.wav --device cuda:0 --output result.json --embeddings-output embeddings.npz
 ```
 
-Default JSON contains **all scores and embeddings**, without truncation. `--embeddings-output` writes full `patch_embeddings` and `clip_embedding` arrays to NPZ; JSON includes their metadata and the artifact path, with omission explicitly marked. NPZ is not a pickle:
+Default JSON contains **all scores and embeddings**, without truncation. JSON and NPZ output paths must differ; identical resolved paths are rejected before model loading or writing. `--embeddings-output` writes full `patch_embeddings` and `clip_embedding` arrays to NPZ; JSON includes their metadata and the artifact path, with omission explicitly marked. NPZ is not a pickle:
 
 ```python
 import numpy as np
@@ -164,7 +164,7 @@ BEATS_TEST_CHECKPOINT=/path/to/model.pt BEATS_TEST_DEVICE=cuda pytest -q
 python -m build
 ```
 
-Place `class_labels_indices.csv` beside the model for offline real-session tests. Default tests do not download weights; real model tests explicitly skip unless a checkpoint is supplied. Three synthetic fixtures cover silence, changing tones/stereo 44.1 kHz and noise/22.05 kHz; CPU and CUDA baselines were captured from unmodified upstream before extraction, with repeated runs proving reproducibility. Full waveform, fbank, scores and encoder tokens are compared. Bit-exact comparisons require the recorded Torch build/device; other builds use documented tolerance checks rather than pretending hash portability. [Verification record](docs/verification.md) separates actual local checks from CI coverage.
+Place `class_labels_indices.csv` beside the model for offline real-session tests. Default tests do not download weights; real model tests explicitly skip unless a checkpoint is supplied. Three synthetic fixtures cover silence, changing tones/stereo 44.1 kHz and noise/22.05 kHz; CPU and CUDA baselines were captured from unmodified upstream before extraction, with repeated runs proving reproducibility. Full waveform, fbank, scores and encoder tokens are compared. Bit-exact comparisons require the recorded Torch build and hardware/CPU dispatch. On different hardware, run the checksum-verified original/extracted same-host comparison first and select its local baseline with `BEATS_TEST_BASELINE`; portable waveform and scores keep their existing tolerances. No tolerance is raised to hide nonportable frontend/token differences. See [hardware parity](docs/hardware-parity.md) for the demonstrated window arithmetic/log-fbank cause and exact commands. [Verification record](docs/verification.md) separates actual local checks from CI coverage.
 
 ## License
 

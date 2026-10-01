@@ -23,6 +23,9 @@ p.add_argument("--checkpoint-dir", required=True)
 p.add_argument("--device", default="cpu")
 a = p.parse_args()
 assert "site-packages" in beats_audioset_infer.__file__, beats_audioset_infer.__file__
+sys.path.insert(0, str(Path(__file__).resolve().parent))
+from parity_support import baseline_root
+
 torch.set_num_threads(4)
 
 
@@ -41,8 +44,8 @@ s.cache_info()
 s.load()
 for name in ["noise", "silence", "tones"]:
     r = s.infer(f / (name + ".wav"))
-    g = np.load(f / (name + "_" + a.device + ".npz"))
-    environment = json.loads((f / ("environment_" + a.device + ".json")).read_text())
+    gold_dir, environment = baseline_root(f, a.device)
+    g = np.load(gold_dir / (name + "_" + a.device + ".npz"))
     compare = (
         np.testing.assert_array_equal
         if torch.__version__ == environment["torch"]

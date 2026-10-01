@@ -26,3 +26,14 @@ Public openmirlab-skills capability map inspected: private/unreleased repositori
 Never add weights, privateinputs, userpaths, rawhost reports, credentialfiles, environment/pipfreezelocalURLs or caches to Git. Inspect tracked files plus wheel/sdist contents before push. .gitignore cannot remove existinghistory. Only CC0generated audio and necessary compactnumeric baseline fixtures are eligible here.
 
 Local completion evidence (2026-10-01): 39tests passed on Python3.11 CPU, Python3.11 CUDA, and Python3.10 CPU; default no-checkpoint run32passed/7explicitmodelskips. Installed-wheel public API+CLI NPZ E2E passed on allthree environments, with sockets blocked and completeembeddings exported. Fresh package-managed download verified bothartifact hashes. Wheel19members and sdist41members inspected before finaldoc rebuild: no weights/privateaudio/env/cache. Exact numerical claims restricted to recorded Torch2.7.1+cu126 baseline; Torch2.7.1+cpu checks passed documented1e-4tolerance. Retained torch.nn.utils.weight_norm emits an upstream deprecation warning; replacing it withoutcheckpointkey/parityproof is outofscope.
+
+
+Hardware regression correction: hosted tonal fbank/token gold comparison exposed CPU-dependent upstream window arithmetic. NO AVX reproduction showed bit-exact original/extracted model math; replaying AVX2 pre-FFT window into the original NO AVX path closes the frontend discrepancy to zero. Original arrays preserved, recording hardware metadata added; no tolerance increase. Unknown hosts require checksum-pinned original same-host proof before BEATS_TEST_BASELINE-selected real tests/E2E. CI enforces this. See docs/hardware-parity.md; verification source/tools stay outside wheel, generated references/results stay under ignored local/.
+
+```bash
+python tools/verify_upstream_parity.py --checkpoint /path/to/model.pt --output local/same-host-baseline
+BEATS_TEST_BASELINE=$PWD/local/same-host-baseline BEATS_TEST_CHECKPOINT=/path/to/model.pt pytest -q
+BEATS_TEST_BASELINE=$PWD/local/same-host-baseline python -I tools/verify_installed_e2e.py --checkpoint-dir /path/to/files --device cpu
+```
+
+CLI rejects colliding resolved JSON/NPZ paths before model loading or touching files, preserving existing output bytes.

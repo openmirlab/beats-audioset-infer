@@ -1,6 +1,5 @@
 """Native model regression against pre-extraction original runs. Reads: fixtures."""
 
-import json
 import os
 from pathlib import Path
 
@@ -9,6 +8,7 @@ import pytest
 import soundfile as sf
 import torch
 import torchaudio
+from parity_support import baseline_root
 
 from beats_audioset_infer._impl.model import BEATs, BEATsConfig
 
@@ -35,7 +35,8 @@ def test_native_parity(model, name):
     if sr != 16000:
         x = torchaudio.functional.resample(x, sr, 16000)
     x = x.mean(0, keepdim=True)
-    gold = np.load(f / (name + "_" + device + ".npz"))
+    gold_dir, environment = baseline_root(f, device)
+    gold = np.load(gold_dir / (name + "_" + device + ".npz"))
     with torch.inference_mode():
         fb = m.preprocess(x)
         scores, mask, tokens = m.extract_features(x)
@@ -46,7 +47,6 @@ def test_native_parity(model, name):
         ("scores", scores),
         ("tokens", tokens),
     ]:
-        environment = json.loads((f / ("environment_" + device + ".json")).read_text())
         if torch.__version__ == environment["torch"]:
             np.testing.assert_array_equal(actual.cpu().numpy(), gold[key])
         else:

@@ -28,6 +28,7 @@ jobs:
       - run: python -m pip install torch==2.7.1 torchaudio==2.7.1 --index-url https://download.pytorch.org/whl/cpu
       - run: python -m pip install '.[dev]' numpy==2.2.6
       - run: python -c 'from beats_audioset_infer.checkpoints import CheckpointStore; CheckpointStore(cache_dir="local/model-cache").resolve()'
-      - run: BEATS_TEST_CHECKPOINT=$PWD/local/model-cache/172e4071a2912392d9151c70750b9a12f55fc54e/model.pt pytest -q
+      - run: python tools/verify_upstream_parity.py --checkpoint local/model-cache/172e4071a2912392d9151c70750b9a12f55fc54e/model.pt --output local/same-host-baseline
+      - run: BEATS_TEST_BASELINE=$PWD/local/same-host-baseline BEATS_TEST_CHECKPOINT=$PWD/local/model-cache/172e4071a2912392d9151c70750b9a12f55fc54e/model.pt pytest -q
       - run: python -m build && python -m pip install --force-reinstall --no-deps dist/*.whl
-      - run: python -I tools/verify_installed_e2e.py --checkpoint-dir local/model-cache/172e4071a2912392d9151c70750b9a12f55fc54e --device cpu
+      - run: BEATS_TEST_BASELINE=$PWD/local/same-host-baseline python -I tools/verify_installed_e2e.py --checkpoint-dir local/model-cache/172e4071a2912392d9151c70750b9a12f55fc54e --device cpu
