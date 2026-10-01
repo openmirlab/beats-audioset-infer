@@ -1,0 +1,18 @@
+{
+  "torch": "2.7.1+cu126",
+  "torchaudio": "2.7.1+cu126",
+  "numpy": "2.2.6",
+  "hardware": {
+    "device": "cpu",
+    "architecture": "x86_64",
+    "cpu": "13th Gen Intel(R) Core(TM) i5-13600K",
+    "dispatch": "AVX2"
+  },
+  "source_revision": "95c61b4168fc5133be8dd8c1337d929d066ae6cf",
+  "license": "CC0-1.0 generated inputs; original torchaudio 2.7.1 outputs",
+  "fixture_sha256": "94cb070be45dcd83e5bc2f667c008603c943074a0b6e8a91673f93755250b9f3",
+  "source_sha256": {
+    "functional.py": "73caabde698f5cb8b8d0de0d08b7291ef41e508ba836d6ecce4b23b6bb82d798",
+    "kaldi.py": "5cbea1a584ddea748f6f68a621d794e13334e88d9faa1d40986f7af32f196d29"
+  }
+}
