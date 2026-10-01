@@ -1,0 +1,12 @@
+BEATs AudioSet inference extraction
+Original source: Microsoft unilm/beats, revision31c5b904ca1bf2afb4c234a6675c683a4e5fc7cd.
+Copyright (c) 2022 Microsoft. MIT; retained headers and root LICENSE.
+Package integration copyright (c) 2026 openmirlab.
+
+Transformer source derives from FAIRSEQ, Copyright (c) Facebook, Inc. and its affiliates.
+FAIRSEQ license retained in docs/FAIRSEQ_LICENSE and distributed with this package.
+Upstream acknowledges VQGAN; its tokenizer/quantizer is not copied or shipped.
+No model weights bundled. Code MIT does not grant checkpoint licensing.
+Third-party selected weights have unspecified licensing and unauthenticated original provenance.
+AudioSet mapping: Google AudioSet dataset CC BY4.0, ontology CC BY-SA4.0.
+This standalone package is not an official Microsoft or FAIRSEQ release.
