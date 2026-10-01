@@ -10,3 +10,6 @@ local/
 *.bin
 *.lock
 .env*
+*.safetensors
+build/
+*.egg-info/

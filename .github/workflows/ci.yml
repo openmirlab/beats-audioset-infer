@@ -1,0 +1,33 @@
+name: Verify inference package
+on: [push, pull_request]
+jobs:
+  contracts:
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        python: ['3.10', '3.11', '3.12', '3.13']
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '${{ matrix.python }}'
+      - run: python -m pip install torch==2.7.1 torchaudio==2.7.1 --index-url https://download.pytorch.org/whl/cpu
+      - run: python -m pip install '.[dev]' numpy==2.2.6
+      - run: pytest -q
+      - run: python -m ruff check src tests tools
+      - run: python -m build
+      - run: python -m pip install --force-reinstall --no-deps dist/*.whl
+      - run: cd /tmp && python -I -c 'from beats_audioset_infer import BEATsAudioSetSession; print(BEATsAudioSetSession(offline=True).status)'
+  real-model:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - run: python -m pip install torch==2.7.1 torchaudio==2.7.1 --index-url https://download.pytorch.org/whl/cpu
+      - run: python -m pip install '.[dev]' numpy==2.2.6
+      - run: python -c 'from beats_audioset_infer.checkpoints import CheckpointStore; CheckpointStore(cache_dir="local/model-cache").resolve()'
+      - run: BEATS_TEST_CHECKPOINT=$PWD/local/model-cache/172e4071a2912392d9151c70750b9a12f55fc54e/model.pt pytest -q
+      - run: python -m build && python -m pip install --force-reinstall --no-deps dist/*.whl
+      - run: python -I tools/verify_installed_e2e.py --checkpoint-dir local/model-cache/172e4071a2912392d9151c70750b9a12f55fc54e --device cpu
