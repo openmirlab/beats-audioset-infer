@@ -1,6 +1,7 @@
 """One audio normalization owner for files and explicit-rate waveforms.
 
-Resamples channels before mono averaging, then validates a minimum full patch.
+Resamples channels before mono averaging, then validates a minimum full patch
+or explicitly right-zero pads short input when requested.
 Reads: SoundFile metadata, caller arrays, concrete Torch device.
 """
 
@@ -12,7 +13,9 @@ import torch
 from .resample import resample
 
 
-def normalize(audio, sample_rate, device):
+def normalize(audio, sample_rate, device, *, pad_short=False):
+    if type(pad_short) is not bool:
+        raise TypeError("pad_short must be a bool")
     if isinstance(audio, (str, Path)):
         import soundfile as sf
 
@@ -59,8 +62,18 @@ def normalize(audio, sample_rate, device):
     if sample_rate != 16000:
         x = resample(x, sample_rate, 16000)
     x = x.mean(0, keepdim=True)
+    normalized_samples = x.shape[1]
+    padding_samples = max(0, 2800 - normalized_samples) if pad_short else 0
     if x.shape[1] < 2800:
-        raise ValueError(
-            "BEATs needs at least 0.175 seconds for one complete time patch"
-        )
+        if not pad_short:
+            raise ValueError(
+                "BEATs needs at least 0.175 seconds for one complete time patch"
+            )
+        x = torch.nn.functional.pad(x, (0, padding_samples))
+    info.update(
+        normalized_samples=normalized_samples,
+        model_samples=x.shape[1],
+        padding_samples=padding_samples,
+        padding_seconds=padding_samples / 16000,
+    )
     return x, info

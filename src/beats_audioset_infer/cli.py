@@ -24,6 +24,11 @@ def main():
         "--checkpoint-config", help="Alternate validated checkpoint JSON registry"
     )
     p.add_argument("--offline", action="store_true")
+    p.add_argument(
+        "--pad-short",
+        action="store_true",
+        help="Right-zero pad clips shorter than one complete time patch",
+    )
     p.add_argument("--output", help="Complete JSON output; defaults to stdout")
     p.add_argument(
         "--embeddings-output",
@@ -47,7 +52,7 @@ def main():
             checkpoint_config=a.checkpoint_config,
         ) as s:
             s.load()
-            r = s.infer(a.audio)
+            r = s.infer(a.audio, pad_short=a.pad_short)
     except (OSError, ValueError, RuntimeError, TypeError) as exc:
         p.error(str(exc))
     data = r.to_dict(include_embeddings=a.embeddings_output is None)

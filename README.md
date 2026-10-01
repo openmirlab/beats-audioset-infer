@@ -6,7 +6,7 @@ Bidirectional Encoder representation from Audio Transformers (BEATs) is an audio
 
 [Microsoft's original BEATs](https://github.com/microsoft/unilm/tree/master/beats) introduced audio pre-training with acoustic tokenizers. This package extracts the inference path into a namespaced, reusable PyTorch session without FAIRSEQ or training tools. The upstream model code and research are the foundation of this work.
 
-**Code is MIT. Checkpoint licensing is not explicitly stated. This repository stays private and unpublished until the weight licensing is resolved.** No checkpoint has been rehosted to openmirlab. Official OneDrive links were unavailable from our test environment; third-party mirror identity cannot be verified against official bytes.
+**Model code is MIT; retained TorchAudio preprocessing is BSD-2-Clause. Checkpoint licensing is not explicitly stated. This repository stays private and unpublished until the weight licensing is resolved.** No checkpoint has been rehosted to openmirlab. Official OneDrive links were unavailable from our test environment; third-party mirror identity cannot be verified against official bytes.
 
 ## Acknowledgments
 
@@ -18,6 +18,7 @@ Bidirectional Encoder representation from Audio Transformers (BEATs) is an audio
 - The upstream also acknowledges [VQGAN](https://github.com/CompVis/taming-transformers). Its tokenizer/quantizer is not needed or shipped here.
 - [WeiChihChen's checkpoint mirror](https://huggingface.co/WeiChihChen/BEATs_iter3_plus_AS2M_finetuned_on_AS2M_cpt2): currently required for acquisition; this attribution does not establish licensing or original-file authenticity.
 - [Google AudioSet](https://research.google.com/audioset/): the 527-class label mapping.
+- [TorchAudio](https://github.com/pytorch/audio/tree/95c61b4168fc5133be8dd8c1337d929d066ae6cf): its original pure PyTorch sinc-resampling and Kaldi-filterbank functions are retained under [BSD-2-Clause](docs/TORCHAUDIO_LICENSE), without depending on the TorchAudio binary runtime.
 
 ## Citation
 
@@ -45,11 +46,11 @@ Copied from the upstream README:
 
 Only iter3+ AS2M AudioSet-fine-tuned cpt2 is supported. This is audio representation/tagging, not musical beat, onset or tempo tracking. Native sigmoid scores are not calibrated confidence. There is no model quality improvement, silence-specific behavior, hidden segmentation or duration clipping.
 
-Training, evaluation frameworks, dataset loaders, pre-training tokenizers, VQGAN, translation, summarization and fine-tuning remain out of scope. Single clips are unpadded; variable-length batching is not exposed.
+Training, evaluation frameworks, dataset loaders, pre-training tokenizers, VQGAN, translation, summarization and fine-tuning remain out of scope. Single clips are unpadded by default; short-input padding is explicit and variable-length batching is not exposed.
 
 ## Install
 
-Python 3.10+; dependencies have version floors. Verified locally with Python 3.11, Torch/torchaudio 2.7.1 and NumPy 2.2.6. Install matching Torch/torchaudio builds for your CPU/CUDA platform first.
+Python 3.10+; dependencies have version floors. Verified with Python 3.11/Torch 2.7.1/NumPy 2.2.6 on CPU and CUDA, Python 3.13/Torch 2.13 on CPU, and an Ubuntu 24.04 CUDA 13.0 container with Python 3.13.15/Torch 2.13.0+cu130/NumPy 2.5.3 on an RTX 4090. Install the appropriate Torch build for your CPU/CUDA platform first. TorchAudio is not a runtime dependency: only the used pure PyTorch resampling and Kaldi-filterbank dependency closures are included, with original arithmetic and licensing preserved.
 
 This private package is not on PyPI. From an authorized checkout:
 
@@ -94,7 +95,9 @@ with BEATsAudioSetSession(device="cpu") as session:
     result = session.infer(np.zeros(16000, dtype=np.float32), sample_rate=16000)
 ```
 
-Channels are resampled to 16 kHz using `torchaudio.functional.resample`, then averaged to mono. This is the input convention validated against our upstream baseline; upstream `extract_features` itself expects prepared mono 16 kHz input. Inputs shorter than 0.175 seconds cannot form one full patch and raise before encoder execution. No artificial padding is added. Longer audio is processed directly; no deployment duration ceiling or quality/resource certification is claimed.
+Channels are resampled to 16 kHz using the retained original TorchAudio 2.7.1 pure PyTorch sinc-resampling function, then averaged to mono. This is the input convention validated against our upstream baseline; upstream `extract_features` itself expects prepared mono 16 kHz input. By default, inputs with fewer than 2,800 normalized samples (0.175 seconds) cannot form one full patch and raise before encoder execution. Longer audio is processed directly; no deployment duration ceiling or quality/resource certification is claimed.
+
+For short, nonempty audio, opt in with `session.infer(audio, sample_rate=16000, pad_short=True)` or CLI `--pad-short`. After the existing resampling and channel averaging, the normalized waveform is right-zero padded to 2,800 samples; empty or non-finite input still fails. The option must be an actual Python `bool`. This changes the model input and is not a claim of short-clip recognition quality. Scores and embeddings match explicitly providing that same padded normalized waveform. `result.audio` retains original samples and duration, and records `normalized_samples` before padding, `model_samples`, `padding_samples` and `padding_seconds`. Native encoder patch tokens represent the padded waveform, including its added silence; `embedding_info.padding` makes that explicit. The derived clip embedding still averages all native tokens without normalization or masking.
 
 Devices: `auto` chooses CUDA 0 when available, otherwise CPU; `cpu`, `cuda` and `cuda:N` are honored. An unavailable explicit CUDA device raises. MPS/MLX are unsupported. Global precision flags are left to the caller; there is no implicit mixed precision or TF32 modification.
 
@@ -132,6 +135,8 @@ A generic `checkpoint_config="/path/to/registry.json"` (CLI `--checkpoint-config
 
 The default registry is package-owned [config/checkpoints.json](src/beats_audioset_infer/config/checkpoints.json). First explicit `load()` downloads missing managed artifacts atomically and verifies size plus SHA256; existing corruption raises instead of silent replacement. Concurrent acquisition uses a file lock. `cache_info()` is read-only, uses the same path resolver, never creates directories/downloads, and reports integrity as `not_checked` until actual loading verifies bytes.
 
+After successful `load()`, `session.loaded_checkpoint_info()` returns a defensive, JSON-compatible snapshot of the verified resident checkpoint. It includes `model_id="beats-audioset"`, `checkpoint_id="<repo>@<revision>"`, the primary weight's `checkpoint_sha256`, the resolved `device`, and original provenance and artifact identities with local paths removed. This memory-only query does not download, hash files or inspect the cache; it describes the loaded model even if registry metadata subsequently changes. It raises `RuntimeError` unless the session is ready, including after `release()` or `close()`. Loading again after release establishes a new snapshot. This verifies artifact bytes against the registry, not the mirror's original identity or its authorization.
+
 Default root: `~/.cache/beats-audioset-infer/`; files are under revision `172e4071a2912392d9151c70750b9a12f55fc54e`. Override through `cache_dir=` or `BEATS_AUDIOSET_INFER_CACHE`. A read-only manual folder uses `checkpoint_dir=`; missing explicit model bytes are not substituted automatically.
 
 Manual download URLs:
@@ -166,9 +171,13 @@ python -m build
 
 Place `class_labels_indices.csv` beside the model for offline real-session tests. Default tests do not download weights; real model tests explicitly skip unless a checkpoint is supplied. Three synthetic fixtures cover silence, changing tones/stereo 44.1 kHz and noise/22.05 kHz; CPU and CUDA baselines were captured from unmodified upstream before extraction, with repeated runs proving reproducibility. Full waveform, fbank, scores and encoder tokens are compared. Bit-exact comparisons require the recorded Torch build and hardware/CPU dispatch. On different hardware, run the checksum-verified original/extracted same-host comparison first and select its local baseline with `BEATS_TEST_BASELINE`; portable waveform and scores keep their existing tolerances. No tolerance is raised to hide nonportable frontend/token differences. See [hardware parity](docs/hardware-parity.md) for the demonstrated window arithmetic/log-fbank cause and exact commands. [Verification record](docs/verification.md) separates actual local checks from CI coverage.
 
+Developer-only reference tools `capture_baseline.py`, `capture_audio_frontend.py` and `verify_upstream_parity.py` require the original TorchAudio 2.7.1 reference in a separate matching Torch 2.7.1 environment. They are not required for package use or ordinary tests. Optional live-reference tests skip explicitly when that reference is absent; committed original frontend arrays retain their hardware/build guards. `capture_audio_frontend.py` refuses to overwrite the recorded original arrays.
+
+The installed wheel also passed its full checkpoint-enabled GPU tests and API/CLI E2E in the CUDA 13.0 container with TorchAudio imports blocked, including full scores/embeddings, short-input padding, loaded provenance and release/reload. Synthetic Gaussian inputs of 1, 10, 30, 60 and 120 seconds executed with finite scores. These checks establish execution and lifecycle behavior, not recognition quality, a supported maximum duration or a service resource budget. The [verification record](docs/verification.md) includes the exact environment and measured Torch memory counters.
+
 ## License
 
-Package/upstream code: MIT, with Microsoft and openmirlab copyright. FAIRSEQ notice retained. **Weights: no explicit license located; unresolved.** AudioSet dataset metadata is CC BY 4.0; ontology CC BY-SA 4.0. Numeric golden traces derive from the selected model and do not establish additional rights to its checkpoint. This private implementation does not authorize public redistribution.
+Model/package integration code: MIT, with Microsoft and openmirlab copyright. FAIRSEQ notice retained. Original TorchAudio preprocessing: BSD-2-Clause, Copyright (c) 2017 Facebook Inc. (Soumith Chintala); full notice shipped with the package. Combined code license expression: `MIT AND BSD-2-Clause`. **Weights: no explicit license located; unresolved.** AudioSet dataset metadata is CC BY 4.0; ontology CC BY-SA 4.0. Numeric golden traces derive from the selected model and do not establish additional rights to its checkpoint. This private implementation does not authorize public redistribution.
 
 ## Support
 
