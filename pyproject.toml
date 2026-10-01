@@ -1,0 +1,26 @@
+[build-system]
+requires = ["hatchling>=1.25"]
+build-backend = "hatchling.build"
+[project]
+name = "beats-audioset-infer"
+dynamic = ["version"]
+description = "Standalone BEATs AudioSet tagging and native patch embeddings"
+readme = "README.md"
+requires-python = ">=3.10"
+license = "MIT"
+authors = [{name = "Microsoft BEATs authors"}]
+maintainers = [{name = "openmirlab"}]
+dependencies = ["torch>=2.7.1", "torchaudio>=2.7.1", "numpy>=1.26", "soundfile>=0.12", "filelock>=3.13"]
+[project.scripts]
+beats-audioset-infer = "beats_audioset_infer.cli:main"
+[project.optional-dependencies]
+dev = ["pytest>=8", "build>=1.2", "ruff>=0.12"]
+[tool.hatch.version]
+path = "src/beats_audioset_infer/__about__.py"
+[tool.hatch.build.targets.wheel]
+packages = ["src/beats_audioset_infer"]
+[tool.hatch.build.targets.sdist]
+include = ["src/", "tests/", "tools/", "docs/", "README.md", "CLAUDE.md", "CHANGELOG.md", "LICENSE", "NOTICE", "pyproject.toml", ".gitignore", ".github/"]
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+pythonpath = ["src"]
