@@ -17,9 +17,9 @@ from typing import Optional
 
 import torch
 import torch.nn as nn
-import torchaudio.compliance.kaldi as ta_kaldi
 from torch.nn import LayerNorm
 
+from . import kaldi as ta_kaldi
 from .backbone import (
     TransformerEncoder,
 )

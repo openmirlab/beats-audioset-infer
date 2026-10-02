@@ -16,6 +16,17 @@ import numpy as np
 import soundfile as sf
 import torch
 
+
+class NoTorchAudio:
+    """Prove the installed runtime cannot fall back to a binary audio dependency."""
+
+    def find_spec(self, fullname, path=None, target=None):
+        if fullname == "torchaudio" or fullname.startswith("torchaudio."):
+            raise AssertionError("Installed runtime attempted a torchaudio import")
+
+
+sys.meta_path.insert(0, NoTorchAudio())
+
 import beats_audioset_infer
 
 p = argparse.ArgumentParser()
@@ -42,8 +53,14 @@ s = BEATsAudioSetSession(device=a.device, checkpoint_dir=a.checkpoint_dir, offli
 assert s.status == "new"
 s.cache_info()
 s.load()
+identity = s.loaded_checkpoint_info()
+assert identity["model_id"] == "beats-audioset"
+assert identity["device"] == s.device
+assert all("path" not in artifact for artifact in identity["files"].values())
+json.dumps(identity, allow_nan=False)
 for name in ["noise", "silence", "tones"]:
     r = s.infer(f / (name + ".wav"))
+    assert identity["checkpoint_sha256"] == r.checkpoint["files"]["model.pt"]["sha256"]
     gold_dir, environment = baseline_root(f, a.device)
     g = np.load(gold_dir / (name + "_" + a.device + ".npz"))
     compare = (
@@ -63,10 +80,35 @@ for name in ["noise", "silence", "tones"]:
 ref = weakref.ref(s._model)
 s.release()
 assert ref() is None
+try:
+    s.loaded_checkpoint_info()
+except RuntimeError:
+    pass
+else:
+    raise AssertionError("Released session retained loaded identity")
 s.load()
+assert s.loaded_checkpoint_info() == identity
 r = s.infer(f / "tones.wav")
+short_audio = np.sin(np.arange(1600, dtype=np.float32) * 0.04)
+short_result = s.infer(short_audio, sample_rate=16000, pad_short=True)
+explicit_short = s.infer(np.pad(short_audio, (0, 1200)), sample_rate=16000)
+assert short_result.scores == explicit_short.scores
+np.testing.assert_array_equal(
+    short_result.patch_embeddings, explicit_short.patch_embeddings
+)
+np.testing.assert_array_equal(
+    short_result.clip_embedding, explicit_short.clip_embedding
+)
+assert short_result.audio["padding_samples"] == 1200
+assert short_result.audio["samples"] == 1600
 s.close()
 assert s.status == "closed"
+try:
+    s.loaded_checkpoint_info()
+except RuntimeError:
+    pass
+else:
+    raise AssertionError("Closed session retained loaded identity")
 json.dumps(r.to_dict(), allow_nan=False)
 from beats_audioset_infer.cli import main
 
@@ -92,6 +134,21 @@ with tempfile.TemporaryDirectory() as td:
     with np.load(artifact, allow_pickle=False) as arrays:
         np.testing.assert_array_equal(arrays["patch_embeddings"], r.patch_embeddings)
         np.testing.assert_array_equal(arrays["clip_embedding"], r.clip_embedding)
+    short_file = Path(td) / "short.wav"
+    sf.write(short_file, short_audio, 16000, subtype="FLOAT")
+    sys.argv[1] = str(short_file)
+    sys.argv.append("--pad-short")
+    assert main() == 0
+    short_data = json.loads(output.read_text())
+    assert short_data["scores"] == list(short_result.scores)
+    assert short_data["audio"]["padding_samples"] == 1200
+    with np.load(artifact, allow_pickle=False) as arrays:
+        np.testing.assert_array_equal(
+            arrays["patch_embeddings"], short_result.patch_embeddings
+        )
+        np.testing.assert_array_equal(
+            arrays["clip_embedding"], short_result.clip_embedding
+        )
 print(
     "Installed wheel API/file/array/tensor/full scores/embeddings/JSON/CLI NPZ/offline/release/reload/close E2E passed:",
     a.device,

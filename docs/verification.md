@@ -16,3 +16,26 @@ Actual completion runs: 39passed each on Python3.11 CPU/CUDA and Python3.10 CPU;
 
 
 Correction following hosted CI: comparing frontend/token goldens solely by Torch build was insufficient across CPUs. Recorded arrays remain immutable; their hardware metadata now guards nonportable arithmetic. Strict same-host original/extracted A/B replaces neither the permanent fixtures nor score/waveform portability checks. See hardware-parity.md for reproduced CPU-window differences and counterfactual closure proof. The first hosted real-model run failed; the corrected workflow must pass before claiming hosted completion.
+
+## Pure PyTorch audio dependency extraction
+
+The independent provenance accessor and explicit short-input padding were tested before this separate dependency stage. Before changing the frontend imports, original TorchAudio2.7.1 CPU outputs were captured in `tests/fixtures/audio_frontend_cpu.npz` and JSON metadata: seeded CC0 stereo signals at16k/32k/44.1k/48k→16k and raw filterbanks for the existing silence/noise/tones fixtures. Metadata retains the fixture hash, original source hashes, Torch build and hardware dispatch. Existing complete model golden arrays and tolerance rules were not changed.
+
+The implementation retains exactly three original sinc-resampling functions and fbank's15-function pure PyTorch dependency closure from pytorch/audio@95c61b4168fc5133be8dd8c1337d929d066ae6cf. No MFCC, DCT helper or binary TorchAudio runtime is shipped. Optional live-reference tests compare source-function ASTs and14float32/float64 numeric cases; `BEATS_TEST_DEVICE` chooses CPU or CUDA for those live comparisons. All tested cases match the original bit-for-bit on both devices. Full BSD-2-Clause notice is retained, with license SHA256 `93a58861a858cc108e6b6b833e08e76e8b2a66339e4a8007c8a5a8c1ff9c40d6`; combined code metadata is `MIT AND BSD-2-Clause`.
+
+Completion on Python3.11/Torch2.7.1+cu126: full cached CPU96passed and full CUDA96passed; focused CUDA frontend16passed. Installed-wheel API/file/array/tensor/all527scores/nativepatch+derivedclip/JSON/CLI NPZ/release/reload/close/provenance/shortpad E2E passed on both CPU and CUDA, with networking and every `torchaudio` import actively blocked. Original full-waveform/fbank/scores/token fixtures remain unchanged. Coordinating integration also verified the real-checkpoint CPU fullsuite on Python3.13.5/Torch2.13.0+cpu/NumPy2.2.6 without TorchAudio installed:80passed/16explicit original-reference-only skips. That CPU stage did not cover CUDA or container measurements; the later container evidence follows below. Ruff and sdist-to-wheel checks passed; existing runtime dependencies were reused read-only for the Python3.11 installed-wheel checks rather than freshly resolved.
+
+The coordinating integration then installed both new PANNs and BEATs wheels together into a fresh Python3.13.5/Torch2.13.0+cpu environment, resolving their declared core dependencies without TorchAudio. Both installed-wheel CPU E2E tools passed, including explicit short-padding/manual-input equality, CLI fullscores/embedding NPZ, provenance and release/reload. This paired install is local-wheel CPU compatibility evidence, separate from the subsequent CUDA check, and not a public PyPI release.
+
+## Offline CUDA 13.0 container verification
+
+Actual environment: Ubuntu24.04/CUDA13.0, NVIDIA RTX4090 with driver595.84, Python3.13.15, Torch2.13.0+cu130 and NumPy2.5.3. Container image identity: `sha256:167ea96ddbbd7f96dab67217546e22fc810fc71080fd412506673193e3d784eb`. The installed wheel's full GPU suite passed80tests;16tests explicitly skipped only optional original-reference or recording-build comparisons. All checkpoint-enabled tests ran with the existing numerical tolerances unchanged. Installed API/file/array/tensor/all527scores/nativepatch+derivedclip/CLI JSON+NPZ/shortpad/provenance/release/reload E2E passed, with TorchAudio imports actively blocked and inference operating offline.
+
+Native CUDA inference also executed synthetic Gaussian inputs of1,10,30,60 and120seconds with finite scores. After `release()`, a model weak reference was gone and Torch allocated memory returned to8,519,680bytes. A separate plain Torch matmul without this package independently reproduced that framework baseline; remaining allocation is therefore not evidence of a retained package model. Reload returned equal provenance; repeated close remained idempotent and terminal. The container exited cleanly.
+
+| Synthetic input | Torch peak allocated bytes | Torch peak reserved bytes |
+| --- | ---: | ---: |
+| 10 seconds | 456,212,480 | 499,122,176 |
+| 120 seconds | 7,430,660,096 | 9,550,430,208 |
+
+These counters are not NVML total GPU memory or host RAM. The generated Gaussian signals test execution and lifecycle, not tagging quality on long, changing events. No supported maximum duration, hosted service budget or latency benchmark is established by these measurements.

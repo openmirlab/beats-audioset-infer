@@ -1,3 +1,6 @@
 Synthetic audio fixtures dedicated to the public domain under CC0 1.0.
 Generated deterministically by openmirlab; no private or third-party audio.
-Baseline numeric traces generated from the selected model, whose weight license is unspecified.
+Original model baseline numeric traces generated from the selected model, whose weight license is unspecified.
+audio_frontend_cpu.npz also contains CC0-generated seeded stereo waveforms and
+original TorchAudio 2.7.1 resampling/filterbank outputs, without model inference.
+The retained TorchAudio implementation is BSD-2-Clause; see docs/TORCHAUDIO_LICENSE.

@@ -64,6 +64,26 @@ class BEATsAudioSetSession:
     def cache_info(self):
         return self._store.cache_info()
 
+    def loaded_checkpoint_info(self):
+        """Return a portable snapshot of the verified resident checkpoint.
+
+        Only a ready session has a loaded identity. This in-memory query neither
+        examines the cache nor verifies files again; release invalidates it.
+        """
+        with self._lock:
+            if self._status != "ready":
+                raise RuntimeError("Call load() before loaded_checkpoint_info()")
+            provenance = copy.deepcopy(self._checkpoint)
+            for artifact in provenance["files"].values():
+                artifact.pop("path", None)
+            return {
+                **provenance,
+                "model_id": "beats-audioset",
+                "checkpoint_id": f"{provenance['repo']}@{provenance['revision']}",
+                "checkpoint_sha256": provenance["files"]["model.pt"]["sha256"],
+                "device": str(self._device),
+            }
+
     def _open(self):
         if self._status == "closed":
             raise RuntimeError("Session is closed")
@@ -134,7 +154,9 @@ class BEATsAudioSetSession:
                 self._status = "failed"
                 raise
 
-    def infer(self, audio, *, sample_rate=None):
+    def infer(self, audio, *, sample_rate=None, pad_short=False):
+        if type(pad_short) is not bool:
+            raise TypeError("pad_short must be a bool")
         with self._lock:
             self._open()
             if self._status != "ready":
@@ -144,7 +166,7 @@ class BEATsAudioSetSession:
             from ._impl.audio import normalize
             from .results import BEATsAudioSetResult
 
-            x, info = normalize(audio, sample_rate, self._device)
+            x, info = normalize(audio, sample_rate, self._device, pad_short=pad_short)
             self._status = "busy"
             try:
                 with torch.inference_mode():
@@ -170,7 +192,11 @@ class BEATsAudioSetSession:
                     "time_patch_support_seconds": 0.175,
                     "partial_final_patch": "dropped",
                     "clip_embedding": "additional arithmetic mean across all native patch tokens; not normalized",
-                    "padding": "none; one unpadded clip per call",
+                    "padding": (
+                        f"waveform right-zero padded by {info['padding_samples']} samples before encoder; native tokens represent the padded input"
+                        if info["padding_samples"]
+                        else "none; one unpadded clip per call"
+                    ),
                 }
                 return BEATsAudioSetResult(
                     tuple(float(v) for v in scores[0].cpu()),

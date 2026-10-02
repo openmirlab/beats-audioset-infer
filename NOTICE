@@ -10,3 +10,10 @@ No model weights bundled. Code MIT does not grant checkpoint licensing.
 Third-party selected weights have unspecified licensing and unauthenticated original provenance.
 AudioSet mapping: Google AudioSet dataset CC BY4.0, ontology CC BY-SA4.0.
 This standalone package is not an official Microsoft or FAIRSEQ release.
+
+Pure PyTorch sinc resampling and Kaldi fbank dependency closures are copied from
+TorchAudio v2.7.1, revision95c61b4168fc5133be8dd8c1337d929d066ae6cf.
+Copyright (c) 2017 Facebook Inc. (Soumith Chintala), BSD-2-Clause.
+Complete license retained in docs/TORCHAUDIO_LICENSE and distributed under
+beats_audioset_infer/licenses/TORCHAUDIO_LICENSE.txt. No binary TorchAudio
+runtime, MFCC, unrelated audio tools or model weights are bundled.
