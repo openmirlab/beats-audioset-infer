@@ -1,5 +1,9 @@
 # Changelog
 
+## Unreleased
+
+- Make the GitHub repository public (2026-11-12) with checkpoint licensing still unresolved; no PyPI release and no org-hosted weights. Document installation from GitHub.
+
 ## 0.1.0 — unpublished
 
 - Record installed-wheel CPU and CUDA Torch 2.13 verification, including an offline CUDA 13.0 container, full checkpoint tests/API/CLI lifecycle checks and synthetic-duration memory measurements; no quality, maximum-duration or service-budget certification is implied.
