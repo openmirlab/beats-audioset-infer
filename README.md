@@ -6,7 +6,7 @@ Bidirectional Encoder representation from Audio Transformers (BEATs) is an audio
 
 [Microsoft's original BEATs](https://github.com/microsoft/unilm/tree/master/beats) introduced audio pre-training with acoustic tokenizers. This package extracts the inference path into a namespaced, reusable PyTorch session without FAIRSEQ or training tools. The upstream model code and research are the foundation of this work.
 
-**Model code is MIT; retained TorchAudio preprocessing is BSD-2-Clause. Checkpoint licensing is not explicitly stated. This repository stays private and unpublished until the weight licensing is resolved.** No checkpoint has been rehosted to openmirlab. Official OneDrive links were unavailable from our test environment; third-party mirror identity cannot be verified against official bytes.
+**Model code is MIT; retained TorchAudio preprocessing is BSD-2-Clause. Checkpoint licensing is not explicitly stated and remains unresolved; this public repository bundles and rehosts no weights.** No checkpoint has been rehosted to openmirlab. Official OneDrive links were unavailable from our test environment; third-party mirror identity cannot be verified against official bytes.
 
 ## Acknowledgments
 
@@ -52,9 +52,10 @@ Training, evaluation frameworks, dataset loaders, pre-training tokenizers, VQGAN
 
 Python 3.10+; dependencies have version floors. Verified with Python 3.11/Torch 2.7.1/NumPy 2.2.6 on CPU and CUDA, Python 3.13/Torch 2.13 on CPU, and an Ubuntu 24.04 CUDA 13.0 container with Python 3.13.15/Torch 2.13.0+cu130/NumPy 2.5.3 on an RTX 4090. Install the appropriate Torch build for your CPU/CUDA platform first. TorchAudio is not a runtime dependency: only the used pure PyTorch resampling and Kaldi-filterbank dependency closures are included, with original arithmetic and licensing preserved.
 
-This private package is not on PyPI. From an authorized checkout:
+This package is not on PyPI. Install it from GitHub, or from a checkout:
 
 ```bash
+python -m pip install "beats-audioset-infer @ git+https://github.com/openmirlab/beats-audioset-infer"
 python -m pip install .
 ```
 
@@ -181,4 +182,4 @@ Model/package integration code: MIT, with Microsoft and openmirlab copyright. FA
 
 ## Support
 
-Use this private repository's issue tracker for package bugs. Original model research belongs to [Microsoft BEATs](https://github.com/microsoft/unilm/tree/master/beats). No upstream licensing issue has been opened automatically.
+Use this repository's issue tracker for package bugs. Original model research belongs to [Microsoft BEATs](https://github.com/microsoft/unilm/tree/master/beats). No upstream licensing issue has been opened automatically.

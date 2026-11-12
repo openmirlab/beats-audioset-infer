@@ -21,7 +21,7 @@ python -I tools/verify_installed_e2e.py --checkpoint-dir /path/to/files --device
 
 The explicit checkpoint directory must also contain verified `class_labels_indices.csv`. Tests never implicitly download. Regenerate baseline with tools/capture_baseline.py against an untouched upstream reference, supplying --upstream, --checkpoint, --fixtures tests/fixtures and --device cpu/cuda. Baselinecommit precedes core extraction; CPU/CUDA original repeatability and extracted outputs proven exact on recorded environment. See docs/verification.md for measured status and structural audit.
 
-Public openmirlab-skills capability map inspected: private/unreleased repositories are explicitly excluded. No public usage entry added while this package is private. Parent owns corresponding engineering radar/status record.
+Public openmirlab-skills capability map inspected: private/unreleased repositories are explicitly excluded. The repository is public since 2026-11-12 (not on PyPI); no openmirlab-skills usage entry has been added yet. Parent owns corresponding engineering radar/status record.
 
 Never add weights, privateinputs, userpaths, rawhost reports, credentialfiles, environment/pipfreezelocalURLs or caches to Git. Inspect tracked files plus wheel/sdist contents before push. .gitignore cannot remove existinghistory. Only CC0generated audio and necessary compactnumeric baseline fixtures are eligible here.
 
