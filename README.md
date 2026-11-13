@@ -2,11 +2,13 @@
 
 Bidirectional Encoder representation from Audio Transformers (BEATs) is an audio representation model, **not beat tracking**. This standalone package provides AudioSet tagging and encoder patch embeddings from the AudioSet-fine-tuned iter3+ AS2M cpt2 model.
 
+[![Code license: MIT AND BSD-2-Clause](https://img.shields.io/badge/code-MIT%20AND%20BSD--2--Clause-blue.svg)](LICENSE)
+
 ## Why this exists
 
 [Microsoft's original BEATs](https://github.com/microsoft/unilm/tree/master/beats) introduced audio pre-training with acoustic tokenizers. This package extracts the inference path into a namespaced, reusable PyTorch session without FAIRSEQ or training tools. The upstream model code and research are the foundation of this work.
 
-**Model code is MIT; retained TorchAudio preprocessing is BSD-2-Clause. Checkpoint licensing is not explicitly stated and remains unresolved; this public repository bundles and rehosts no weights.** No checkpoint has been rehosted to openmirlab. Official OneDrive links were unavailable from our test environment; third-party mirror identity cannot be verified against official bytes.
+**Model code is MIT; retained TorchAudio preprocessing is BSD-2-Clause. The source repository is public, but checkpoint rights remain unresolved; this package neither bundles nor rehosts weights and has no PyPI release.** Official OneDrive links were unavailable from our test environment; third-party mirror identity cannot be verified against official bytes.
 
 ## Acknowledgments
 
@@ -52,7 +54,7 @@ Training, evaluation frameworks, dataset loaders, pre-training tokenizers, VQGAN
 
 Python 3.10+; dependencies have version floors. Verified with Python 3.11/Torch 2.7.1/NumPy 2.2.6 on CPU and CUDA, Python 3.13/Torch 2.13 on CPU, and an Ubuntu 24.04 CUDA 13.0 container with Python 3.13.15/Torch 2.13.0+cu130/NumPy 2.5.3 on an RTX 4090. Install the appropriate Torch build for your CPU/CUDA platform first. TorchAudio is not a runtime dependency: only the used pure PyTorch resampling and Kaldi-filterbank dependency closures are included, with original arithmetic and licensing preserved.
 
-This package is not on PyPI. Install it from GitHub, or from a checkout:
+This public source package is not on PyPI. Install it from GitHub or from a checkout:
 
 ```bash
 python -m pip install "beats-audioset-infer @ git+https://github.com/openmirlab/beats-audioset-infer"
@@ -178,8 +180,8 @@ The installed wheel also passed its full checkpoint-enabled GPU tests and API/CL
 
 ## License
 
-Model/package integration code: MIT, with Microsoft and openmirlab copyright. FAIRSEQ notice retained. Original TorchAudio preprocessing: BSD-2-Clause, Copyright (c) 2017 Facebook Inc. (Soumith Chintala); full notice shipped with the package. Combined code license expression: `MIT AND BSD-2-Clause`. **Weights: no explicit license located; unresolved.** AudioSet dataset metadata is CC BY 4.0; ontology CC BY-SA 4.0. Numeric golden traces derive from the selected model and do not establish additional rights to its checkpoint. This private implementation does not authorize public redistribution.
+Model/package integration code: MIT, with Microsoft and openmirlab copyright. FAIRSEQ notice retained. Original TorchAudio preprocessing: BSD-2-Clause, Copyright (c) 2017 Facebook Inc. (Soumith Chintala); full notice shipped with the package. Combined code license expression: `MIT AND BSD-2-Clause`. **Weights: no explicit license located; unresolved.** AudioSet dataset metadata is CC BY 4.0; ontology CC BY-SA 4.0. Numeric golden traces derive from the selected model and do not establish additional rights to its checkpoint. Public source availability does not establish permission to redistribute the checkpoint.
 
 ## Support
 
-Use this repository's issue tracker for package bugs. Original model research belongs to [Microsoft BEATs](https://github.com/microsoft/unilm/tree/master/beats). No upstream licensing issue has been opened automatically.
+Use this repository's [issue tracker](https://github.com/openmirlab/beats-audioset-infer/issues) for package bugs. Original model research belongs to [Microsoft BEATs](https://github.com/microsoft/unilm/tree/master/beats). No upstream licensing issue has been opened automatically.
